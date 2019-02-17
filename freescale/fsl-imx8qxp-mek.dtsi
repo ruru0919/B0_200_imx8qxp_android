@@ -61,23 +61,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg_can_en: regulator-can-gen {
-			compatible = "regulator-fixed";
-			regulator-name = "can-en";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			gpio = <&pca6416 3 GPIO_ACTIVE_HIGH>;
-			enable-active-high;
-		};
-
 		reg_can_stby: regulator-can-stby {
 			compatible = "regulator-fixed";
 			regulator-name = "can-stby";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
-			gpio = <&pca6416 5 GPIO_ACTIVE_HIGH>;
+			gpio = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&reg_can_en>;
 		};
 
 		reg_fec2_supply: fec2_nvcc {
@@ -108,24 +98,6 @@
 			enable-active-high;
 		};
 
-		reg_usb_otg1_vbus: regulator@0 {
-			compatible = "regulator-fixed";
-			reg = <0>;
-			regulator-name = "usb_otg1_vbus";
-			regulator-min-microvolt = <5000000>;
-			regulator-max-microvolt = <5000000>;
-			gpio = <&pca9557_b 2 GPIO_ACTIVE_HIGH>;
-			enable-active-high;
-		};
-
-		reg_audio: fixedregulator@2 {
-			compatible = "regulator-fixed";
-			reg = <2>;
-			regulator-name = "cs42888_supply";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			regulator-always-on;
-		};
 	};
 
 	sound: sound {
@@ -135,12 +107,6 @@
 		cpu-dai = <&sai1>;
 		audio-codec = <&wm8960>;
 		codec-master;
-		/*
-		 * hp-det = <hp-det-pin hp-det-polarity>;
-		 * hp-det-pin: JD1 JD2  or JD3
-		 * hp-det-polarity = 0: hp detect high for headphone
-		 * hp-det-polarity = 1: hp detect high for speaker
-		 */
 		hp-det = <2 0>;
 		hp-det-gpios = <&gpio1 0 0>;
 		mic-det-gpios = <&gpio1 0 0>;
@@ -170,15 +136,6 @@
 		amix-controller = <&amix>;
 	};
 
-	sound-cs42888 {
-		compatible = "fsl,imx8qm-sabreauto-cs42888",
-				"fsl,imx-audio-cs42888";
-		model = "imx-cs42888";
-		esai-controller = <&esai0>;
-		audio-codec = <&cs42888>;
-		asrc-controller = <&asrc0>;
-		status = "okay";
-	};
 
 	sound-xtor {
 		compatible = "fsl,imx-audio-xtor";
@@ -486,12 +443,16 @@
 
 		pinctrl_i2c0_mipi_lvds0: mipi_lvds0_i2c0_grp {
 			fsl,pins = <
-				SC_P_MIPI_DSI0_I2C0_SCL_MIPI_DSI0_I2C0_SCL	0xc6000020
-				SC_P_MIPI_DSI0_I2C0_SDA_MIPI_DSI0_I2C0_SDA	0xc6000020
-				SC_P_MIPI_DSI0_GPIO0_01_LSIO_GPIO1_IO28		0x00000020
+				SC_P_MIPI_DSI0_I2C0_SCL_MIPI_DSI0_I2C0_SCL	0xc6000021
+				SC_P_MIPI_DSI0_I2C0_SDA_MIPI_DSI0_I2C0_SDA	0xc6000021
 			>;
 		};
-
+        pinctrl_ilitekirq: ilitekirqgrp{
+            fsl,pins = <
+                SC_P_MIPI_DSI0_GPIO0_01_LSIO_GPIO1_IO28         0x21
+                SC_P_CSI_PCLK_LSIO_GPIO3_IO00                   0x21
+            >;
+        };
 		pinctrl_pwm_mipi_lvds1: mipi_lvds1_pwm_grp {
 			fsl,pins = <
 				SC_P_MIPI_DSI1_GPIO0_00_MIPI_DSI1_PWM0_OUT	0x00000020
@@ -794,33 +755,6 @@
 				<&clk IMX8QXP_AUD_MCLKOUT0>;
 		assigned-clock-rates = <786432000>, <49152000>, <12288000>, <12288000>;
 	};
-
-	pca6416: gpio@20 {
-		compatible = "ti,tca6416";
-		reg = <0x20>;
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
-
-	cs42888: cs42888@48 {
-		compatible = "cirrus,cs42888";
-		reg = <0x48>;
-		clocks = <&clk IMX8QXP_AUD_MCLKOUT0>;
-		clock-names = "mclk";
-		VA-supply = <&reg_audio>;
-		VD-supply = <&reg_audio>;
-		VLS-supply = <&reg_audio>;
-		VLC-supply = <&reg_audio>;
-		reset-gpio = <&pca9557_b 1 1>;
-		power-domains = <&pd_mclk_out0>;
-		assigned-clocks = <&clk IMX8QXP_AUD_PLL0_DIV>,
-				<&clk IMX8QXP_AUD_ACM_AUD_PLL_CLK0_DIV>,
-				<&clk IMX8QXP_AUD_ACM_AUD_REC_CLK0_DIV>,
-				<&clk IMX8QXP_AUD_MCLKOUT0>;
-		assigned-clock-rates = <786432000>, <49152000>, <12288000>, <12288000>;
-		fsl,txs-rxm;
-		status = "okay";
-	};
 };
 
 &i2c1 {
@@ -843,6 +777,20 @@
 			#size-cells = <0>;
 			reg = <0>;
 
+            ilitek@41 {
+                compatible = "tchip,ilitek";
+                pinctrl-names = "default";
+                pinctrl-0 = <&pinctrl_ilitekirq>;
+                reg = <41>;
+                interrupt-extended = <&gpio1>, <&gpio3>;
+                interrupts = <28 IRQ_TYPE_LEVEL_HIGH>; 
+                ilitek,irq-gpio = <&gpio1 28 IRQ_TYPE_LEVEL_HIGH>;
+                ilitek,reset-gpio = <&gpio3 0 IRQ_TYPE_LEVEL_HIGH>; 
+                ilitek,vbus = "vcc_i2c"; 
+                ilitek,vdd = "vdd"; 
+                ilitek,name = "ilitek_i2c"; 
+            };
+
 			max7322: gpio@68 {
 				compatible = "maxim,max7322";
 				reg = <0x68>;
@@ -862,23 +810,6 @@
 			#size-cells = <0>;
 			reg = <2>;
 
-			fxos8700@1e {
-				compatible = "fsl,fxos8700";
-				reg = <0x1e>;
-				interrupt-open-drain;
-			};
-
-			fxas2100x@21 {
-				compatible = "fsl,fxas2100x";
-				reg = <0x21>;
-				interrupt-open-drain;
-			};
-
-			mpl3115@60 {
-				compatible = "fsl,mpl3115";
-				reg = <0x60>;
-				interrupt-open-drain;
-			};
 		};
 
 		i2c@3 {
@@ -891,6 +822,19 @@
 				reg = <0x1a>;
 				gpio-controller;
 				#gpio-cells = <2>;
+
+                rst_tja1101_r_n {
+                    gpio-hog;
+                    gpios = <4 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+        
+                mipi_dsi0_en {
+                    gpio-hog;
+                    gpios = <6 GPIO_ACTIVE_HIGH>; 
+                    output-high;
+                };   
+
 			};
 
 			pca9557_b: gpio@1d {
@@ -898,35 +842,48 @@
 				reg = <0x1d>;
 				gpio-controller;
 				#gpio-cells = <2>;
+
+                en_tdf8532_r {
+                    gpio-hog;
+                    gpios = <1 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+                bb_usb_otg1_pwr_on_r {
+                    gpio-hog;
+                    gpios = <2 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+                tdf8532_mute_r_n {
+                    gpio-hog;
+                    gpios = <3 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+                rst_tef6638_r_n {
+                    gpio-hog;
+                    gpios = <4 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+                tja1101_en_r {
+                    gpio-hog;
+                    gpios = <5 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+                rst_gps_r_n {
+                    gpio-hog;
+                    gpios = <6 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+                mipi_dsi1_en {
+                    gpio-hog;
+                    gpios = <7 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
+
 			};
 
-			isl29023@44 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&pinctrl_isl29023>;
-				compatible = "fsl,isl29023";
-				reg = <0x44>;
-				rext = <499>;
-				interrupt-parent = <&gpio1>;
-				interrupts = <2 2>;
-			};
 		};
 	};
 
-	typec_ptn5110: typec@50 {
-		compatible = "usb,tcpci";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_typec>;
-		reg = <0x50>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <3 IRQ_TYPE_LEVEL_LOW>;
-		ss-sel-gpios = <&gpio5 9 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&pca9557_a 7 GPIO_ACTIVE_HIGH>;
-		src-pdos = <0x380190c8 0x3803c0c8>;
-		port-type = "drp";
-		sink-disable;
-		default-role = "source";
-		status = "okay";
-	};
 };
 
 &sai0 {
@@ -952,7 +909,6 @@
 };
 
 &usbotg1 {
-	vbus-supply = <&reg_usb_otg1_vbus>;
 	srp-disable;
 	hnp-disable;
 	adp-disable;
@@ -963,8 +919,7 @@
 
 /* Only enable it and ptn5110 after rework U182 */
 &usbotg3 {
-	dr_mode = "otg";
-	extcon = <&typec_ptn5110>;
+	dr_mode = "host";
 	status = "okay";
 };
 
@@ -1179,20 +1134,6 @@
 	clock-frequency = <100000>;
 	status = "okay";
 
-	lvds-to-hdmi-bridge@4c {
-		compatible = "ite,it6263";
-		reg = <0x4c>;
-		reset-gpios = <&pca9557_a 6 GPIO_ACTIVE_LOW>;
-
-		port {
-			it6263_0_in: endpoint {
-				clock-lanes = <4>;
-				data-lanes = <0 1 2 3>;
-				remote-endpoint = <&lvds0_out>;
-			};
-		};
-	};
-
 	adv_bridge1: adv7535@3d {
 		compatible = "adi,adv7535", "adi,adv7533";
 		reg = <0x3d>;
@@ -1211,39 +1152,58 @@
 
 };
 
+/ {
+    lvds0_panel {
+        compatible = "jdi,tx26d202vm0bwa";
+        backlight = <&lvds_backlight1>;
+
+        port {
+            panel_lvds0_in: endpoint {
+                remote-endpoint = <&lvds0_out>;
+            };
+        };
+    };
+};
+
+
+
 &ldb1_phy {
 	status = "okay";
 };
 
 &ldb1 {
 	status = "okay";
+    fsl,dual-channel;
+    power-domains = <&pd_mipi_dsi_0_dual_lvds>;
 
-	lvds-channel@0 {
-		fsl,data-mapping = "jeida";
-		fsl,data-width = <24>;
-		status = "okay";
-
-		port@1 {
-			reg = <1>;
-
-			lvds0_out: endpoint {
-				remote-endpoint = <&it6263_0_in>;
-			};
-		};
-	};
+    lvds-channel@0 {
+        fsl,data-mapping = "spwg";
+        fsl,data-width = <24>;
+	    status = "okay";
+        port@1 {
+            reg = <1>;
+            lvds0_out: endpoint {
+                remote-endpoint = <&panel_lvds0_in>;
+            };
+        };
+    };
 };
 
 &mipi_dsi_phy1 {
 	status = "okay";
+    /*status = "disabled";*/
 };
 
 &mipi_dsi1 {
-	pwr-delay = <10>;
+    pwr-delay = <10>;
 	status = "okay";
+
+    /*status = "disabled";*/
 };
 
 &mipi_dsi_bridge1 {
 	status = "okay";
+    /*status = "disabled";*/
 
 	port@1 {
 		mipi_dsi_bridge1_out: endpoint {
@@ -1267,20 +1227,6 @@
 	clock-frequency = <100000>;
 	status = "okay";
 
-	lvds-to-hdmi-bridge@4c {
-		compatible = "ite,it6263";
-		reg = <0x4c>;
-		reset-gpios = <&pca9557_b 7 GPIO_ACTIVE_LOW>;
-
-		port {
-			it6263_1_in: endpoint {
-				clock-lanes = <4>;
-				data-lanes = <0 1 2 3>;
-				remote-endpoint = <&lvds1_out>;
-			};
-		};
-	};
-
 	adv_bridge2: adv7535@3d {
 		compatible = "adi,adv7535", "adi,adv7533";
 		reg = <0x3d>;
@@ -1303,34 +1249,23 @@
 };
 
 &ldb2 {
-	status = "okay";
-
-	lvds-channel@0 {
-		fsl,data-mapping = "jeida";
-		fsl,data-width = <24>;
-		status = "okay";
-
-		port@1 {
-			reg = <1>;
-
-			lvds1_out: endpoint {
-				remote-endpoint = <&it6263_1_in>;
-			};
-		};
-	};
+	status = "disabled";
 };
 
 &mipi_dsi_phy2 {
 	status = "okay";
+    /*status = "disabled";*/
 };
 
 &mipi_dsi2 {
 	pwr-delay = <10>;
 	status = "okay";
+    /*status = "disabled";*/
 };
 
 &mipi_dsi_bridge2 {
 	status = "okay";
+    /*status = "disabled";*/
 
 	port@1 {
 		mipi_dsi_bridge2_out: endpoint {
@@ -1386,3 +1321,4 @@
 	    };
     };
 };
+
