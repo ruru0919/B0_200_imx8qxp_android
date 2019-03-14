@@ -50,6 +50,18 @@
 		stdout-path = &lpuart0;
 	};
 
+    leds {
+        compatible = "gpio-leds";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_gpiobee>;
+        user {
+            label = "stella_bee";
+            gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+            default-state = "on";
+            linux,default-trigger = "heartbeat";
+        };
+    };
+
 	bt_rfkill {
 		compatible = "fsl,mxc_bt_rfkill";
 		bt-power-gpios = <&pca9557_a 1 GPIO_ACTIVE_LOW>;
@@ -61,7 +73,15 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg_can_stby: regulator-can-stby {
+		reg_can_stby0: regulator-can-stby0 {
+			compatible = "regulator-fixed";
+			regulator-name = "can-stby";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+		reg_can_stby1: regulator-can-stby1 {
 			compatible = "regulator-fixed";
 			regulator-name = "can-stby";
 			regulator-min-microvolt = <3300000>;
@@ -69,13 +89,22 @@
 			gpio = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
+		reg_can_stby2: regulator-can-stby2 {
+			compatible = "regulator-fixed";
+			regulator-name = "can-stby";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
 
 		reg_fec2_supply: fec2_nvcc {
 			compatible = "regulator-fixed";
 			regulator-name = "fec2_nvcc";
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			gpio = <&max7322 0 GPIO_ACTIVE_HIGH>;
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			/*gpio = <&max7322 0 GPIO_ACTIVE_HIGH>;*/
+			gpio = <&pca9557_b 5 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
 
@@ -101,32 +130,12 @@
 	};
 
 	sound: sound {
-		compatible = "fsl,imx7d-evk-wm8960",
-			   "fsl,imx-audio-wm8960";
-		model = "wm8960-audio";
+		compatible = "fsl,imx8-inventec";
+		model = "tef6638-audio";
 		cpu-dai = <&sai1>;
-		audio-codec = <&wm8960>;
-		codec-master;
-		hp-det = <2 0>;
-		hp-det-gpios = <&gpio1 0 0>;
-		mic-det-gpios = <&gpio1 0 0>;
-		audio-routing =
-			"Headphone Jack", "HP_L",
-			"Headphone Jack", "HP_R",
-			"Ext Spk", "SPK_LP",
-			"Ext Spk", "SPK_LN",
-			"Ext Spk", "SPK_RP",
-			"Ext Spk", "SPK_RN",
-			"LINPUT2", "Mic Jack",
-			"LINPUT3", "Mic Jack",
-			"RINPUT1", "Main MIC",
-			"RINPUT2", "Main MIC",
-			"Mic Jack", "MICB",
-			"Main MIC", "MICB",
-			"CPU-Playback", "ASRC-Playback",
-			"Playback", "CPU-Playback",
-			"ASRC-Capture", "CPU-Capture",
-			"CPU-Capture", "Capture";
+		audio-codec = <&tef6638>;
+        asrc-controller = <&asrc0>;
+        
 	};
 
 	sound-amix-sai {
@@ -135,7 +144,6 @@
 		dais = <&sai4>, <&sai5>;
 		amix-controller = <&amix>;
 	};
-
 
 	sound-xtor {
 		compatible = "fsl,imx-audio-xtor";
@@ -205,7 +213,7 @@
 };
 
 &esai0 {
-	compatible = "fsl,imx8qm-esai";
+/*	compatible = "fsl,imx8qm-esai";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_esai0>;
 	assigned-clocks = <&clk IMX8QXP_ACM_ESAI0_MCLK_SEL>,
@@ -216,7 +224,8 @@
 	assigned-clock-parents = <&clk IMX8QXP_AUD_ACM_AUD_PLL_CLK0_CLK>;
 	assigned-clock-rates = <0>, <786432000>, <49152000>, <12288000>, <49152000>;
 	fsl,txm-rxs;
-	status = "okay";
+	status = "okay";*/
+    status = "disabled";
 };
 
 &sai4 {
@@ -252,10 +261,16 @@
 	imx8qxp-mek {
 		pinctrl_hog: hoggrp {
 			fsl,pins = <
-				SC_P_MCLK_OUT0_ADMA_ACM_MCLK_OUT0	0x0600004c
+				/*SC_P_MCLK_OUT0_ADMA_ACM_MCLK_OUT0	0x0600004c*/
 				SC_P_COMP_CTL_GPIO_1V8_3V3_GPIORHB_PAD	0x000514a0
 			>;
 		};
+        
+        pinctrl_gpiobee: gpiobeegrp {
+			fsl,pins = <
+                SC_P_SPI0_CS0_LSIO_GPIO1_IO08       0x06000020
+			>;
+        };
 
 		pinctrl_csi0_lpi2c0: csi0lpi2c0grp {
 			fsl,pins = <
@@ -264,7 +279,7 @@
 			>;
 		};
 
-		pinctrl_esai0: esai0grp {
+		/*pinctrl_esai0: esai0grp {
 			fsl,pins = <
 				SC_P_ESAI0_FSR_ADMA_ESAI0_FSR		0xc6000040
 				SC_P_ESAI0_FST_ADMA_ESAI0_FST		0xc6000040
@@ -277,7 +292,7 @@
 				SC_P_ESAI0_TX4_RX1_ADMA_ESAI0_TX4_RX1	0xc6000040
 				SC_P_ESAI0_TX5_RX0_ADMA_ESAI0_TX5_RX0	0xc6000040
 			>;
-		};
+		};*/
 
 		pinctrl_lpuart0: lpuart0grp {
 			fsl,pins = <
@@ -304,11 +319,13 @@
 
 		pinctrl_lpuart3: lpuart3grp {
 			fsl,pins = <
-				SC_P_FLEXCAN2_TX_ADMA_UART3_TX	0x06000020
-				SC_P_FLEXCAN2_RX_ADMA_UART3_RX	0x06000020
+				/*SC_P_FLEXCAN2_TX_ADMA_UART3_TX	0x06000020
+				SC_P_FLEXCAN2_RX_ADMA_UART3_RX	0x06000020*/
+				SC_P_SCU_GPIO0_01_ADMA_UART3_TX	 0x06000020
+				SC_P_SCU_GPIO0_00_ADMA_UART3_RX  0x06000020
 			>;
 		};
-
+        
 		pinctrl_fec1: fec1grp {
 			fsl,pins = <
 				SC_P_COMP_CTL_GPIO_1V8_3V3_ENET_ENETB0_PAD	0x000014a0
@@ -332,20 +349,26 @@
 
 		pinctrl_fec2: fec2grp {
 			fsl,pins = <
-				SC_P_ESAI0_SCKR_CONN_ENET1_RGMII_TX_CTL		0x00000060
-				SC_P_ESAI0_FSR_CONN_ENET1_RGMII_TXC		0x00000060
-				SC_P_ESAI0_TX4_RX1_CONN_ENET1_RGMII_TXD0	0x00000060
-				SC_P_ESAI0_TX5_RX0_CONN_ENET1_RGMII_TXD1	0x00000060
-				SC_P_ESAI0_FST_CONN_ENET1_RGMII_TXD2		0x00000060
-				SC_P_ESAI0_SCKT_CONN_ENET1_RGMII_TXD3		0x00000060
-				SC_P_ESAI0_TX0_CONN_ENET1_RGMII_RXC		0x00000060
-				SC_P_SPDIF0_TX_CONN_ENET1_RGMII_RX_CTL		0x00000060
-				SC_P_SPDIF0_RX_CONN_ENET1_RGMII_RXD0		0x00000060
-				SC_P_ESAI0_TX3_RX2_CONN_ENET1_RGMII_RXD1	0x00000060
-				SC_P_ESAI0_TX2_RX3_CONN_ENET1_RGMII_RXD2	0x00000060
-				SC_P_ESAI0_TX1_CONN_ENET1_RGMII_RXD3		0x00000060
+                SC_P_ENET0_MDC_CONN_ENET1_MDC                   0x06000020
+                SC_P_ENET0_MDIO_CONN_ENET1_MDIO                 0x06000020
+                SC_P_ESAI0_FSR_CONN_ENET1_RCLK50M_OUT           0x06000020
+                /*SC_P_ESAI0_FSR_CONN_ENET1_RCLK50M_IN            0x06000020*/
+                /*SC_P_ESAI0_FSR_CONN_ENET1_RGMII_TXC             0x06000020*/
+                SC_P_SPDIF0_RX_CONN_ENET1_RGMII_RXD0            0x06000020
+                SC_P_ESAI0_TX3_RX2_CONN_ENET1_RGMII_RXD1        0x06000020
+                SC_P_ESAI0_TX2_RX3_CONN_ENET1_RMII_RX_ER        0x06000020
+                SC_P_SPDIF0_TX_CONN_ENET1_RGMII_RX_CTL          0x06000020
+                SC_P_ESAI0_TX4_RX1_CONN_ENET1_RGMII_TXD0        0x06000020
+                SC_P_ESAI0_TX5_RX0_CONN_ENET1_RGMII_TXD1        0x06000020
+                SC_P_ESAI0_SCKR_CONN_ENET1_RGMII_TX_CTL         0x06000020
 			>;
 		};
+
+        /*pinctrl_fec2_irq: fec2grpirq {
+			fsl,pins = <
+                SC_P_QSPI0A_SS1_B_LSIO_GPIO3_IO15           0x21
+            >; 
+        };*/
 
 		pinctrl_flexcan1: flexcan0grp {
 			fsl,pins = <
@@ -361,9 +384,16 @@
 			>;
 		};
 
+		pinctrl_flexcan3: flexcan2grp {
+			fsl,pins = <
+				SC_P_FLEXCAN2_TX_ADMA_FLEXCAN2_TX		0x21
+				SC_P_FLEXCAN2_RX_ADMA_FLEXCAN2_RX		0x21
+			>;
+		};
+
 		pinctrl_lcdif: lcdif_grp {
 			fsl,pins = <
-				SC_P_ESAI0_FSR_ADMA_LCDIF_D00		0x00000060
+				/*SC_P_ESAI0_FSR_ADMA_LCDIF_D00		0x00000060
 				SC_P_ESAI0_FST_ADMA_LCDIF_D01		0x00000060
 				SC_P_ESAI0_SCKR_ADMA_LCDIF_D02		0x00000060
 				SC_P_ESAI0_SCKT_ADMA_LCDIF_D03		0x00000060
@@ -391,7 +421,7 @@
 				SC_P_SPI3_CS1_ADMA_LCDIF_RESET		0x00000060
 				SC_P_MCLK_IN1_ADMA_LCDIF_EN		0x00000060
 				SC_P_MCLK_IN0_ADMA_LCDIF_VSYNC		0x00000060
-				SC_P_MCLK_OUT0_ADMA_LCDIF_CLK		0x00000060
+				SC_P_MCLK_OUT0_ADMA_LCDIF_CLK		0x00000060*/
 			>;
 		};
 
@@ -443,16 +473,11 @@
 
 		pinctrl_i2c0_mipi_lvds0: mipi_lvds0_i2c0_grp {
 			fsl,pins = <
-				SC_P_MIPI_DSI0_I2C0_SCL_MIPI_DSI0_I2C0_SCL	0xc6000021
-				SC_P_MIPI_DSI0_I2C0_SDA_MIPI_DSI0_I2C0_SDA	0xc6000021
+				SC_P_MIPI_DSI0_I2C0_SCL_MIPI_DSI0_I2C0_SCL	0xc6000020
+				SC_P_MIPI_DSI0_I2C0_SDA_MIPI_DSI0_I2C0_SDA	0xc6000020
 			>;
 		};
-        pinctrl_ilitekirq: ilitekirqgrp{
-            fsl,pins = <
-                SC_P_MIPI_DSI0_GPIO0_01_LSIO_GPIO1_IO28         0x21
-                SC_P_CSI_PCLK_LSIO_GPIO3_IO00                   0x21
-            >;
-        };
+
 		pinctrl_pwm_mipi_lvds1: mipi_lvds1_pwm_grp {
 			fsl,pins = <
 				SC_P_MIPI_DSI1_GPIO0_00_MIPI_DSI1_PWM0_OUT	0x00000020
@@ -463,7 +488,6 @@
 			fsl,pins = <
 				SC_P_MIPI_DSI1_I2C0_SCL_MIPI_DSI1_I2C0_SCL	0xc6000020
 				SC_P_MIPI_DSI1_I2C0_SDA_MIPI_DSI1_I2C0_SDA	0xc6000020
-				SC_P_MIPI_DSI1_GPIO0_01_LSIO_GPIO2_IO00		0x00000020
 			>;
 		};
 
@@ -660,56 +684,84 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_fec1>;
 	phy-mode = "rgmii-txid";
-	phy-handle = <&ethphy0>;
+	phy-handle = <&ethphy3>;
 	fsl,magic-packet;
 	fsl,rgmii_rxc_dly;
-	status = "okay";
-
+	/*status = "okay";*/
+    status = "disabled";
+    
 	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		ethphy0: ethernet-phy@0 {
+        
+		ethphy3: ethernet-phy@3 {
+			/*compatible = "ethernet-phy-id0180-dd00", "ethernet-phy-ieee802.3-c22";*/
 			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <0>;
-			at803x,eee-disabled;
-			at803x,vddio-1p8v;
-		};
-
-		ethphy1: ethernet-phy@1 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <1>;
-			at803x,eee-disabled;
-			at803x,vddio-1p8v;
-			status = "disabled";
+			reg = <3>;
+            status = "disabled";
 		};
 	};
 };
 
 &fec2 {
 	pinctrl-names = "default";
+	/*pinctrl-0 = <&pinctrl_fec2 &pinctrl_fec2_irq>;*/
 	pinctrl-0 = <&pinctrl_fec2>;
-	phy-mode = "rgmii-txid";
-	phy-handle = <&ethphy1>;
-	phy-supply = <&reg_fec2_supply>;
+    clocks = <&clk IMX8QXP_ENET1_IPG_CLK>,
+         <&clk IMX8QXP_ENET1_AHB_CLK>,
+         <&clk IMX8QXP_ENET1_REF_50MHZ_CLK>,
+         <&clk IMX8QXP_ENET1_PTP_CLK>,
+         <&clk IMX8QXP_ENET1_TX_CLK>;
+	phy-mode = "rmii";
+	phy-handle = <&ethphy0>;
+    phy-supply = <&reg_fec2_supply>;
 	fsl,magic-packet;
-	fsl,rgmii_rxc_dly;
-	status = "disabled";
+    /*Stella modified on 2019.Mar.7th*/
+    /*phy-reset-gpios = <&pca9557_a 4 GPIO_ACTIVE_LOW>;*/
+    /*phy-reset-gpios = <&pca9557_a 4 GPIO_ACTIVE_HIGH>;*/
+    local-mac-address = [ AA BB CC DD 99 EE ];
+    status = "okay";
+
+    /*fixed-link {
+        speed = <100>;
+        full-duplex;
+    };*/
+    mdio {
+		ethphy0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+            /*status = "disabled";*/
+            /*max-speed = <100>;*/
+            tja110x,refclk_in;
+            interrupt-parent = <&gpio3>;
+            interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
+            irq-gpio = <&gpio3 15 GPIO_ACTIVE_LOW>;
+            status = "okay";
+		};
+    };
 };
 
 &flexcan1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan1>;
-	xceiver-supply = <&reg_can_stby>;
+	xceiver-supply = <&reg_can_stby0>;
 	status = "okay";
 };
 
 &flexcan2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan2>;
-	xceiver-supply = <&reg_can_stby>;
+	xceiver-supply = <&reg_can_stby1>;
 	status = "okay";
 };
+
+&flexcan3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan3>;
+	xceiver-supply = <&reg_can_stby2>;
+	status = "okay";
+};
+
 
 &flexspi0 {
 	pinctrl-names = "default";
@@ -742,19 +794,6 @@
 	pinctrl-0 = <&pinctrl_cm40_i2c>;
 	status = "okay";
 
-	wm8960: wm8960@1a {
-		compatible = "wlf,wm8960";
-		reg = <0x1a>;
-		clocks = <&clk IMX8QXP_AUD_MCLKOUT0>;
-		clock-names = "mclk";
-		wlf,shared-lrclk;
-		power-domains = <&pd_mclk_out0>;
-		assigned-clocks = <&clk IMX8QXP_AUD_PLL0_DIV>,
-				<&clk IMX8QXP_AUD_ACM_AUD_PLL_CLK0_DIV>,
-				<&clk IMX8QXP_AUD_ACM_AUD_REC_CLK0_DIV>,
-				<&clk IMX8QXP_AUD_MCLKOUT0>;
-		assigned-clock-rates = <786432000>, <49152000>, <12288000>, <12288000>;
-	};
 };
 
 &i2c1 {
@@ -777,20 +816,6 @@
 			#size-cells = <0>;
 			reg = <0>;
 
-            ilitek@41 {
-                compatible = "tchip,ilitek";
-                pinctrl-names = "default";
-                pinctrl-0 = <&pinctrl_ilitekirq>;
-                reg = <41>;
-                interrupt-extended = <&gpio1>, <&gpio3>;
-                interrupts = <28 IRQ_TYPE_LEVEL_HIGH>; 
-                ilitek,irq-gpio = <&gpio1 28 IRQ_TYPE_LEVEL_HIGH>;
-                ilitek,reset-gpio = <&gpio3 0 IRQ_TYPE_LEVEL_HIGH>; 
-                ilitek,vbus = "vcc_i2c"; 
-                ilitek,vdd = "vdd"; 
-                ilitek,name = "ilitek_i2c"; 
-            };
-
 			max7322: gpio@68 {
 				compatible = "maxim,max7322";
 				reg = <0x68>;
@@ -810,6 +835,18 @@
 			#size-cells = <0>;
 			reg = <2>;
 
+            tef6638: tef6638dev@60 {
+                compatible = "fsl,tef6638";
+                reg = <0x60>;
+                clocks = <&clk IMX8QXP_AUD_MCLKOUT0>;
+                clock-names = "mclk";
+                power-domains = <&pd_mclk_out0>;
+                assigned-clocks = <&clk IMX8QXP_AUD_PLL0_DIV>,
+                        <&clk IMX8QXP_AUD_ACM_AUD_PLL_CLK0_DIV>,
+                        <&clk IMX8QXP_AUD_ACM_AUD_REC_CLK0_DIV>,
+                        <&clk IMX8QXP_AUD_MCLKOUT0>;
+                assigned-clock-rates = <786432000>, <49152000>, <12288000>, <12288000>;
+            };
 		};
 
 		i2c@3 {
@@ -822,18 +859,22 @@
 				reg = <0x1a>;
 				gpio-controller;
 				#gpio-cells = <2>;
-
-                rst_tja1101_r_n {
+                
+                rst_tja1101 {
                     gpio-hog;
                     gpios = <4 GPIO_ACTIVE_HIGH>;
                     output-high;
                 };
-        
                 mipi_dsi0_en {
                     gpio-hog;
-                    gpios = <6 GPIO_ACTIVE_HIGH>; 
+                    gpios = <6 GPIO_ACTIVE_HIGH>;
                     output-high;
-                };   
+                };
+                rst_phy1 {
+                    gpio-hog;
+                    gpios = <7 GPIO_ACTIVE_HIGH>;
+                    output-high;
+                };
 
 			};
 
@@ -842,33 +883,33 @@
 				reg = <0x1d>;
 				gpio-controller;
 				#gpio-cells = <2>;
-
-                en_tdf8532_r {
+                
+                en_tdf8532 {
                     gpio-hog;
                     gpios = <1 GPIO_ACTIVE_HIGH>;
                     output-high;
                 };
-                bb_usb_otg1_pwr_on_r {
+                bb_usb_otg1_pwr_on {
                     gpio-hog;
                     gpios = <2 GPIO_ACTIVE_HIGH>;
                     output-high;
                 };
-                tdf8532_mute_r_n {
+                tdf8532_mute {
                     gpio-hog;
                     gpios = <3 GPIO_ACTIVE_HIGH>;
                     output-high;
                 };
-                rst_tef6638_r_n {
+                rst_tef6638 {
                     gpio-hog;
                     gpios = <4 GPIO_ACTIVE_HIGH>;
                     output-high;
                 };
-                tja1101_en_r {
+                /*tja1101_en {
                     gpio-hog;
                     gpios = <5 GPIO_ACTIVE_HIGH>;
                     output-high;
-                };
-                rst_gps_r_n {
+                };*/
+                rst_gps {
                     gpio-hog;
                     gpios = <6 GPIO_ACTIVE_HIGH>;
                     output-high;
@@ -1133,28 +1174,30 @@
 	pinctrl-0 = <&pinctrl_i2c0_mipi_lvds0>;
 	clock-frequency = <100000>;
 	status = "okay";
+    
+    adv_bridge1: adv7535@3d {
+        compatible = "adi,adv7535", "adi,adv7533";
+        reg = <0x3d>;
+        adi,dsi-lanes = <4>;
+        adi,dsi-channel = <1>;
+        interrupt-parent = <&gpio1>;
+        interrupts = <28 IRQ_TYPE_LEVEL_LOW>;
+        status = "okay";
 
-	adv_bridge1: adv7535@3d {
-		compatible = "adi,adv7535", "adi,adv7533";
-		reg = <0x3d>;
-		adi,dsi-lanes = <4>;
-		adi,dsi-channel = <1>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <28 IRQ_TYPE_LEVEL_LOW>;
-		status = "okay";
-
-		port {
-			adv7535_1_in: endpoint {
-				remote-endpoint = <&mipi_dsi_bridge1_out>;
-			};
-		};
-	};
+        port {
+            adv7535_1_in: endpoint {
+                remote-endpoint = <&mipi_dsi_bridge1_out>;
+            };
+        };
+    };
 
 };
 
 / {
     lvds0_panel {
         compatible = "jdi,tx26d202vm0bwa";
+        //compatible = "auo,g133han01";
+        
         backlight = <&lvds_backlight1>;
 
         port {
@@ -1165,23 +1208,23 @@
     };
 };
 
-
-
 &ldb1_phy {
 	status = "okay";
 };
 
 &ldb1 {
-	status = "okay";
+    status = "okay";
     fsl,dual-channel;
     power-domains = <&pd_mipi_dsi_0_dual_lvds>;
 
     lvds-channel@0 {
         fsl,data-mapping = "spwg";
         fsl,data-width = <24>;
-	    status = "okay";
+        status = "okay";
+
         port@1 {
             reg = <1>;
+
             lvds0_out: endpoint {
                 remote-endpoint = <&panel_lvds0_in>;
             };
@@ -1191,25 +1234,21 @@
 
 &mipi_dsi_phy1 {
 	status = "okay";
-    /*status = "disabled";*/
 };
 
 &mipi_dsi1 {
-    pwr-delay = <10>;
+	pwr-delay = <10>;
 	status = "okay";
-
-    /*status = "disabled";*/
 };
 
 &mipi_dsi_bridge1 {
 	status = "okay";
-    /*status = "disabled";*/
-
-	port@1 {
-		mipi_dsi_bridge1_out: endpoint {
-			remote-endpoint = <&adv7535_1_in>;
-		};
-	};
+    
+    port@1 {
+        mipi_dsi_bridge1_out: endpoint {
+            remote-endpoint = <&adv7535_1_in>;
+        };
+    };    
 };
 
 &pwm_mipi_lvds1 {
@@ -1226,22 +1265,23 @@
 	pinctrl-0 = <&pinctrl_i2c0_mipi_lvds1>;
 	clock-frequency = <100000>;
 	status = "okay";
+   
+    adv_bridge2: adv7535@3d {
+        compatible = "adi,adv7535", "adi,adv7533";
+        reg = <0x3d>;
+        adi,dsi-lanes = <4>;
+        adi,dsi-channel = <1>;
+        interrupt-parent = <&gpio2>;
+        interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
+        status = "okay";
 
-	adv_bridge2: adv7535@3d {
-		compatible = "adi,adv7535", "adi,adv7533";
-		reg = <0x3d>;
-		adi,dsi-lanes = <4>;
-		adi,dsi-channel = <1>;
-		interrupt-parent = <&gpio2>;
-		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-		status = "okay";
+        port {
+            adv7535_2_in: endpoint {
+                remote-endpoint = <&mipi_dsi_bridge2_out>;
+            };
+        };
+    };
 
-		port {
-			adv7535_2_in: endpoint {
-				remote-endpoint = <&mipi_dsi_bridge2_out>;
-			};
-		};
-	};
 };
 
 &ldb2_phy {
@@ -1250,28 +1290,27 @@
 
 &ldb2 {
 	status = "disabled";
+
 };
 
 &mipi_dsi_phy2 {
 	status = "okay";
-    /*status = "disabled";*/
 };
 
 &mipi_dsi2 {
 	pwr-delay = <10>;
 	status = "okay";
-    /*status = "disabled";*/
 };
 
 &mipi_dsi_bridge2 {
 	status = "okay";
-    /*status = "disabled";*/
+    
+    port@1 {
+        mipi_dsi_bridge2_out: endpoint {
+            remote-endpoint = <&adv7535_2_in>;
+        };
+    };
 
-	port@1 {
-		mipi_dsi_bridge2_out: endpoint {
-			remote-endpoint = <&adv7535_2_in>;
-		};
-	};
 };
 
 &tsens {
@@ -1321,4 +1360,3 @@
 	    };
     };
 };
-
