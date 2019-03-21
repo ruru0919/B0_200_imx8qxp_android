@@ -388,22 +388,22 @@
         
         pinctrl_fec1: fec1grp {
             fsl,pins = <
-                SC_P_COMP_CTL_GPIO_1V8_3V3_ENET_ENETB0_PAD  0x000014a0
-                SC_P_COMP_CTL_GPIO_1V8_3V3_ENET_ENETB1_PAD  0x000014a0
-                SC_P_ENET0_MDC_CONN_ENET0_MDC           0x06000020
-                SC_P_ENET0_MDIO_CONN_ENET0_MDIO         0x06000020
-                SC_P_ENET0_RGMII_TX_CTL_CONN_ENET0_RGMII_TX_CTL 0x00000061
-                SC_P_ENET0_RGMII_TXC_CONN_ENET0_RGMII_TXC   0x00000061
-                SC_P_ENET0_RGMII_TXD0_CONN_ENET0_RGMII_TXD0 0x00000061
-                SC_P_ENET0_RGMII_TXD1_CONN_ENET0_RGMII_TXD1 0x00000061
-                SC_P_ENET0_RGMII_TXD2_CONN_ENET0_RGMII_TXD2 0x00000061
-                SC_P_ENET0_RGMII_TXD3_CONN_ENET0_RGMII_TXD3 0x00000061
-                SC_P_ENET0_RGMII_RXC_CONN_ENET0_RGMII_RXC   0x00000061
-                SC_P_ENET0_RGMII_RX_CTL_CONN_ENET0_RGMII_RX_CTL 0x00000061
-                SC_P_ENET0_RGMII_RXD0_CONN_ENET0_RGMII_RXD0 0x00000061
-                SC_P_ENET0_RGMII_RXD1_CONN_ENET0_RGMII_RXD1 0x00000061
-                SC_P_ENET0_RGMII_RXD2_CONN_ENET0_RGMII_RXD2 0x00000061
-                SC_P_ENET0_RGMII_RXD3_CONN_ENET0_RGMII_RXD3 0x00000061
+                SC_P_COMP_CTL_GPIO_1V8_3V3_ENET_ENETB0_PAD      0x000014a0
+                SC_P_COMP_CTL_GPIO_1V8_3V3_ENET_ENETB1_PAD      0x000014a0
+                /*SC_P_ENET0_MDC_CONN_ENET0_MDC                 0x06000020
+                SC_P_ENET0_MDIO_CONN_ENET0_MDIO                 0x06000020*/
+                SC_P_ENET0_RGMII_TXC_CONN_ENET0_RGMII_TXC       0x06000020
+                SC_P_ENET0_RGMII_TXC_CONN_ENET0_RCLK50M_OUT     0x06000020
+                SC_P_ENET0_RGMII_TXD0_CONN_ENET0_RGMII_TXD0     0x06000020
+                SC_P_ENET0_RGMII_TXD1_CONN_ENET0_RGMII_TXD1     0x06000020
+                SC_P_ENET0_RGMII_TXD2_CONN_ENET0_RGMII_TXD2     0x06000020
+                SC_P_ENET0_RGMII_TXD3_CONN_ENET0_RGMII_TXD3     0x06000020
+                SC_P_ENET0_RGMII_RXC_CONN_ENET0_RGMII_RXC       0x06000020
+                SC_P_ENET0_RGMII_RX_CTL_CONN_ENET0_RGMII_RX_CTL 0x06000020
+                SC_P_ENET0_RGMII_RXD0_CONN_ENET0_RGMII_RXD0     0x06000020
+                SC_P_ENET0_RGMII_RXD1_CONN_ENET0_RGMII_RXD1     0x06000020
+                SC_P_ENET0_RGMII_RXD2_CONN_ENET0_RGMII_RXD2     0x06000020
+                SC_P_ENET0_RGMII_RXD3_CONN_ENET0_RGMII_RXD3     0x06000020
             >;
         };
 
@@ -584,7 +584,7 @@
                 SC_P_SAI1_RXC_ADMA_SAI1_TXC 0x06000040
                 SC_P_SAI1_RXFS_ADMA_SAI1_TXFS   0x06000040
                 SC_P_SPI0_CS1_ADMA_SAI1_TXD 0x06000060
-                SC_P_SPI2_CS0_LSIO_GPIO1_IO00   0x06000040
+                /*SC_P_SPI2_CS0_LSIO_GPIO1_IO00 0x06000040*/
             >;
         };
 
@@ -749,23 +749,15 @@
 &fec1 {
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_fec1>;
-    phy-mode = "rgmii-txid";
-    phy-handle = <&ethphy3>;
+    phy-mode = "rgmii";
     fsl,magic-packet;
-    fsl,rgmii_rxc_dly;
-    /*status = "okay";*/
-    status = "disabled";
+    /*phy-reset-gpios = <&pca9557_a 7 GPIO_ACTIVE_LOW>;*/
+    local-mac-address = [ AA BB CC DD 91 AB ];
+    status = "okay";
     
-    mdio {
-        #address-cells = <1>;
-        #size-cells = <0>;
-        
-        ethphy3: ethernet-phy@3 {
-            /*compatible = "ethernet-phy-id0180-dd00", "ethernet-phy-ieee802.3-c22";*/
-            compatible = "ethernet-phy-ieee802.3-c22";
-            reg = <3>;
-            status = "disabled";
-        };
+    fixed-link {
+        speed = <1000>;
+        full-duplex;
     };
 };
 
@@ -778,33 +770,15 @@
          <&clk IMX8QXP_ENET1_PTP_CLK>,
          <&clk IMX8QXP_ENET1_TX_CLK>;
     phy-mode = "rmii";
-    phy-handle = <&ethphy0>;
     phy-supply = <&reg_fec2_supply>;
     fsl,magic-packet;
-    /*Stella modified on 2019.Mar.7th*/
-    /*phy-reset-gpios = <&pca9557_a 4 GPIO_ACTIVE_LOW>;*/
     /*phy-reset-gpios = <&pca9557_a 4 GPIO_ACTIVE_HIGH>;*/
     local-mac-address = [ AA BB CC DD 99 EE ];
     status = "okay";
-    /*status = "disabled";*/
 
-    /*fixed-link {
+    fixed-link {
         speed = <100>;
         full-duplex;
-    };*/
-    mdio {
-        ethphy0: ethernet-phy@0 {
-            compatible = "ethernet-phy-ieee802.3-c22";
-            reg = <0>;
-            /*status = "disabled";*/
-            /*max-speed = <100>;*/
-            tja110x,refclk_in;
-            interrupt-parent = <&gpio3>;
-            interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
-            irq-gpio = <&gpio3 15 GPIO_ACTIVE_LOW>;
-            status = "okay";
-            /*status = "disabled";*/
-        };
     };
 };
 
@@ -1042,6 +1016,7 @@
     pinctrl-0 = <&pinctrl_sai1>;
     status = "okay";
 };
+
 
 &usbotg1 {
     srp-disable;
